@@ -1,0 +1,51 @@
+# ========================
+# UniConnect .gitignore
+# ========================
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# --- IDE ---
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# --- Node (web frontend) ---
+node_modules/
+dist/
+.cache/
+.parcel-cache/
+.env
+.env.local
+
+# --- Android ---
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.log
+
+# --- Gradle ---
+.gradle/
+build/
+
+# --- Misc ---
+*.pdf
+*.docx
+*.txt
+!README.md
+!LICENSE
