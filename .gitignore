@@ -10,6 +10,14 @@ Desktop.ini
 *.swo
 *~
 
+# --- Environment ---
+.env
+.env.local
+.env.production
+
+# --- Supabase local ---
+supabase/.temp/
+
 # --- IDE ---
 .idea/
 .vscode/

@@ -202,9 +202,59 @@ android run --project_dir=.
 | **Jetpack Compose** | Declarative UI |
 | **Material 3** | Design system & components |
 | **Material Icons Extended** | Full icon library |
-| **AGP 9** | Android Gradle Plugin |
+### Backend
+| Technology | Purpose |
+|-----------|---------|
+| **Supabase** | PostgreSQL database, Auth, Realtime, Storage |
+| **PostgreSQL** | Relational database with Row-Level Security |
+| **Firebase FCM** | Push notifications (Android + Web) |
+| **Vercel** | Web frontend hosting (planned) |
 
+---
 
+## 🗄️ Backend Setup (Supabase)
+
+### 1. Create a Supabase Project
+1. Go to [supabase.com](https://supabase.com) and create a free account
+2. Create a new project — note your **Project URL** and **anon key**
+
+### 2. Run Migrations
+In the Supabase SQL Editor, run these files **in order**:
+
+```
+supabase/migrations/001_users.sql      ← User profiles + auto-create trigger
+supabase/migrations/002_feed.sql       ← Posts, likes, comments
+supabase/migrations/003_servers.sql    ← Servers, channels, messages
+supabase/migrations/004_messages.sql   ← DMs, conversations, read receipts
+supabase/migrations/005_grades.sql     ← Courses, enrollments, GPA calculator
+supabase/migrations/006_events.sql     ← Events, RSVPs
+supabase/migrations/007_groups.sql     ← Study groups, membership
+supabase/migrations/008_help.sql       ← Help requests
+```
+
+### 3. Seed Demo Data
+After creating test users, update the `REPLACE_WITH_USER_ID` placeholders in `supabase/seed.sql` and run it.
+
+### 4. Environment Variables
+```bash
+cp .env.example .env
+# Fill in your Supabase URL and keys
+```
+
+### Database Schema
+
+```
+profiles ← auth.users (auto-created on signup)
+posts → post_likes, post_comments
+servers → channels → channel_messages, server_members
+conversations → conversation_members, direct_messages
+courses → enrollments (with GPA calculator)
+events → event_rsvps
+study_groups → group_members
+help_requests
+```
+
+---
 
 
 ## 🤝 Contributing
