@@ -204,20 +204,8 @@ android run --project_dir=.
 | **Material Icons Extended** | Full icon library |
 | **AGP 9** | Android Gradle Plugin |
 
----
 
-## 🗺️ Roadmap
 
-- [x] **Phase 1**: Web SPA — 8 pages with full UI
-- [x] **Phase 2**: Android app — Native Compose screens for all 8 pages
-- [ ] **Phase 3**: Backend integration (Firebase / Supabase)
-- [ ] **Phase 4**: Real-time messaging (WebSocket / Firestore)
-- [ ] **Phase 5**: User authentication (OAuth / Email)
-- [ ] **Phase 6**: Push notifications
-- [ ] **Phase 7**: Profile pages with connections
-- [ ] **Phase 8**: Video meeting integration
-
----
 
 ## 🤝 Contributing
 
