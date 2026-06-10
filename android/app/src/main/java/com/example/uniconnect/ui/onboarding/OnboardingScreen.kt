@@ -220,7 +220,7 @@ fun OnboardingScreen(
                         Text("Continue")
                         Spacer(Modifier.width(4.dp))
                         Icon(
-                            imageVector = Icons.Default.ArrowForward,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp),
                         )

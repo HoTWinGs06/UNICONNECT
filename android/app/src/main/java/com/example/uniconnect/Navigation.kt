@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -46,7 +48,7 @@ fun MainNavigation() {
         listOf(
             NavItem("feed", "Feed", Icons.Filled.Home, Icons.Outlined.Home),
             NavItem("servers", "Servers", Icons.Filled.Dns, Icons.Outlined.Dns),
-            NavItem("messages", "Messages", Icons.Filled.Chat, Icons.Outlined.Chat, badge = 2),
+            NavItem("messages", "Messages", Icons.AutoMirrored.Filled.Chat, Icons.AutoMirrored.Outlined.Chat, badge = 2),
             NavItem("grades", "Grades", Icons.Filled.School, Icons.Outlined.School),
             NavItem("events", "Events", Icons.Filled.Event, Icons.Outlined.Event),
         )

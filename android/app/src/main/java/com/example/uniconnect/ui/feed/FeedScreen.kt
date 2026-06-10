@@ -92,7 +92,7 @@ private fun PostComposerCard() {
                 horizontalArrangement = Arrangement.SpaceAround,
             ) {
                 ComposerAction(icon = Icons.Filled.Image, label = "Media", tint = MaterialTheme.colorScheme.secondary)
-                ComposerAction(icon = Icons.Filled.Article, label = "Document", tint = MaterialTheme.colorScheme.tertiary)
+                ComposerAction(icon = Icons.AutoMirrored.Filled.Article, label = "Document", tint = MaterialTheme.colorScheme.tertiary)
                 ComposerAction(icon = Icons.Filled.Event, label = "Event", tint = MaterialTheme.colorScheme.primaryContainer)
             }
         }

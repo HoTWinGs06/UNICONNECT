@@ -246,8 +246,8 @@ private fun ChannelItem(
     val icon = when (iconName) {
         "campaign" -> Icons.Default.Campaign
         "folder_open" -> Icons.Default.FolderOpen
-        "help_outline" -> Icons.Default.HelpOutline
-        "volume_up" -> Icons.Default.VolumeUp
+        "help_outline" -> Icons.AutoMirrored.Filled.HelpOutline
+        "volume_up" -> Icons.AutoMirrored.Filled.VolumeUp
         "videocam" -> Icons.Default.Videocam
         else -> Icons.Default.Tag
     }
@@ -396,7 +396,7 @@ private fun ChatArea(channelName: String, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(36.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.secondary),
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = "Send", modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", modifier = Modifier.size(18.dp))
                 }
             }
         }
