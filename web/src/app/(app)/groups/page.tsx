@@ -12,6 +12,9 @@ export default function GroupsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [newEmoji, setNewEmoji] = useState('📚');
+  const [newMaxMembers, setNewMaxMembers] = useState(10);
+  const [newSchedule, setNewSchedule] = useState('');
   const [creating, setCreating] = useState(false);
   const supabase = createClient();
 
@@ -65,6 +68,9 @@ export default function GroupsPage() {
     await supabase.from('study_groups').insert({
       name: newName.trim(),
       description: newDesc.trim(),
+      icon_emoji: newEmoji.trim() || '📚',
+      max_members: newMaxMembers,
+      schedule: newSchedule.trim(),
       created_by: currentUserId,
     });
 
@@ -88,6 +94,9 @@ export default function GroupsPage() {
 
     setNewName('');
     setNewDesc('');
+    setNewEmoji('📚');
+    setNewMaxMembers(10);
+    setNewSchedule('');
     setShowCreate(false);
     setCreating(false);
     fetchGroups();
@@ -144,6 +153,41 @@ export default function GroupsPage() {
               rows={2}
               className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none"
             />
+            <div className="grid grid-cols-[80px_120px_1fr] gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-primary mb-1">Emoji Icon</label>
+                <input
+                  type="text"
+                  value={newEmoji}
+                  onChange={(e) => setNewEmoji(e.target.value)}
+                  placeholder="📚"
+                  maxLength={2}
+                  className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-center text-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-primary mb-1">Max Members</label>
+                <input
+                  type="number"
+                  value={newMaxMembers}
+                  onChange={(e) => setNewMaxMembers(Number(e.target.value))}
+                  placeholder="10"
+                  min={2}
+                  max={100}
+                  className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-primary mb-1">Schedule</label>
+                <input
+                  type="text"
+                  value={newSchedule}
+                  onChange={(e) => setNewSchedule(e.target.value)}
+                  placeholder="e.g., Wed & Fri, 3–5 PM"
+                  className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                />
+              </div>
+            </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <button

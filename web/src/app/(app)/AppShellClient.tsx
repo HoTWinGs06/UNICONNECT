@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import MobileTopBar from '@/components/MobileTopBar';
+import PresenceTracker from '@/components/PresenceTracker';
 import type { Profile } from '@/lib/supabase/types';
 
 export default function AppShellClient({
@@ -18,6 +19,7 @@ export default function AppShellClient({
 
   return (
     <>
+      <PresenceTracker userId={profile.id} />
       {!hideNav && <MobileTopBar pathname={pathname} profile={profile} />}
 
       <div className="flex-1 animate-page-in">

@@ -22,6 +22,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState<'student' | 'faculty'>('student');
   const [selectedBranch, setSelectedBranch] = useState('Computer Science');
   const [selectedYear, setSelectedYear] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -125,12 +126,10 @@ export default function OnboardingPage() {
                       </span>
                     </div>
                     <span
-                      className={`material-symbols-outlined transition-colors ${
-                        role === r ? 'text-secondary' : 'text-transparent'
-                      }`}
-                      style={{ fontVariationSettings: "'FILL' 1" }}
+                      className="material-symbols-outlined transition-colors text-secondary"
+                      style={{ fontVariationSettings: role === r ? "'FILL' 1" : "" }}
                     >
-                      check_circle
+                      {role === r ? 'check_circle' : ''}
                     </span>
                   </div>
                   <h3 className="text-lg font-semibold text-on-background mb-1">
@@ -159,25 +158,47 @@ export default function OnboardingPage() {
               </p>
             </header>
 
-            <div className="flex flex-wrap gap-2">
-              {branches.map((branch) => (
-                <button
-                  key={branch}
-                  onClick={() => setSelectedBranch(branch)}
-                  className={`px-4 py-2 rounded-lg border font-medium text-sm transition-all press-scale flex items-center gap-1 ${
-                    selectedBranch === branch
-                      ? 'border-primary-container bg-primary-container text-on-primary-container'
-                      : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-background'
-                  }`}
-                >
-                  {branch}
-                  {selectedBranch === branch && (
-                    <span className="material-symbols-outlined text-[16px]">
-                      check
-                    </span>
-                  )}
-                </button>
-              ))}
+            <div className="relative mb-6">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for departments e.g., Computer Science, Law..."
+                className="w-full pl-12 pr-4 py-3.5 rounded-lg border border-outline-variant bg-surface-container-lowest focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all text-sm text-on-background placeholder:text-outline shadow-sm"
+              />
+            </div>
+
+            <p className="text-label-sm text-on-surface-variant mb-3">
+              {searchQuery ? 'Search results:' : 'Popular across campus:'}
+            </p>
+            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+              {branches
+                .filter((b) => b.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((branch) => (
+                  <button
+                    key={branch}
+                    type="button"
+                    onClick={() => setSelectedBranch(branch)}
+                    className={`px-4 py-2 rounded-lg border font-medium text-sm transition-all press-scale flex items-center gap-1 ${
+                      selectedBranch === branch
+                        ? 'border-primary-container bg-primary-container text-on-primary-container'
+                        : 'border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-background'
+                    }`}
+                  >
+                    {branch}
+                    {selectedBranch === branch && (
+                      <span className="material-symbols-outlined text-[16px]">
+                        check
+                      </span>
+                    )}
+                  </button>
+                ))}
+              {branches.filter((b) => b.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                <p className="text-sm text-on-surface-variant p-2">No departments match your search.</p>
+              )}
             </div>
           </div>
         )}
@@ -215,10 +236,18 @@ export default function OnboardingPage() {
         {/* Footer Actions */}
         <footer className="mt-12 pt-6 border-t border-outline-variant flex items-center justify-between relative z-10">
           <button
-            onClick={() => (step > 1 ? setStep(step - 1) : router.push('/feed'))}
+            onClick={async () => {
+              if (step > 1) {
+                setStep(step - 1);
+              } else {
+                await supabase.auth.signOut();
+                router.push('/login');
+                router.refresh();
+              }
+            }}
             className="text-label-md text-on-surface-variant hover:text-on-background px-2 py-2 transition-colors"
           >
-            {step > 1 ? 'Back' : 'Skip'}
+            {step > 1 ? 'Back' : 'Log Out'}
           </button>
           <button
             onClick={() => (step < 3 ? setStep(step + 1) : handleComplete())}

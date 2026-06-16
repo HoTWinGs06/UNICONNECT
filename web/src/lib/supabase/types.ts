@@ -242,6 +242,24 @@ export type HelpRequest = {
   course?: Course;
 };
 
+// --- Notifications ---
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  actor_id: string | null;
+  type: 'comment' | 'like' | 'dm' | 'group_join_request' | 'group_join_approved' | 'help_status';
+  entity_type: string | null;
+  entity_id: string | null;
+  title: string;
+  body: string;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+  // Joined
+  actor?: Profile;
+};
+
 // --- Navigation ---
 
 export type NavItem = {

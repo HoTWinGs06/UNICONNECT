@@ -3,16 +3,18 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import NotificationBell from '@/components/NotificationBell';
 import type { Profile, NavItem } from '@/lib/supabase/types';
 
 const navItems: NavItem[] = [
   { path: '/feed', icon: 'home', label: 'Feed', mobileNav: true },
   { path: '/servers', icon: 'dns', label: 'Servers', mobileNav: true },
-  { path: '/messages', icon: 'chat', label: 'Messages', mobileNav: true, badge: 0 },
+  { path: '/messages', icon: 'chat', label: 'Messages', mobileNav: true },
   { path: '/grades', icon: 'school', label: 'Grades', mobileNav: true },
   { path: '/events', icon: 'event', label: 'Events', mobileNav: true },
   { path: '/groups', icon: 'group', label: 'Groups', mobileNav: false },
   { path: '/help', icon: 'help_outline', label: 'Get Help', mobileNav: false },
+  { path: '/profile', icon: 'person', label: 'Profile', mobileNav: false },
 ];
 
 export default function Sidebar({ profile }: { profile: Profile }) {
@@ -29,7 +31,7 @@ export default function Sidebar({ profile }: { profile: Profile }) {
   return (
     <aside className="hidden md:flex w-64 bg-surface border-r border-outline-variant flex-col shrink-0 sticky top-0 h-screen">
       {/* Brand */}
-      <div className="p-5 border-b border-outline-variant">
+      <div className="p-5 border-b border-outline-variant flex items-center justify-between">
         <Link
           href="/feed"
           className="flex items-center gap-2 text-primary-container hover:text-secondary transition-colors"
@@ -44,10 +46,14 @@ export default function Sidebar({ profile }: { profile: Profile }) {
             UniConnect
           </span>
         </Link>
+        <NotificationBell align="left" />
       </div>
 
       {/* Profile Card */}
-      <div className="p-4 border-b border-outline-variant">
+      <Link
+        href="/profile"
+        className="block p-4 border-b border-outline-variant hover:bg-surface-container-low transition-colors"
+      >
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container font-semibold text-sm overflow-hidden border border-outline-variant">
@@ -73,7 +79,7 @@ export default function Sidebar({ profile }: { profile: Profile }) {
             </p>
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto thin-scrollbar">

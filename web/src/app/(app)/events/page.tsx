@@ -29,6 +29,18 @@ export default function EventsPage() {
   const [filter, setFilter] = useState<string>('all');
   const [rsvpEvents, setRsvpEvents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+
+  // Create event states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newCategory, setNewCategory] = useState<Event['category']>('academic');
+  const [newStartTime, setNewStartTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+  const [newCoverImage, setNewCoverImage] = useState('');
+
   const supabase = createClient();
 
   const fetchEvents = useCallback(async () => {
@@ -100,6 +112,49 @@ export default function EventsPage() {
     }
   }
 
+  async function handleCreateEvent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newTitle.trim() || !newLocation.trim()) return;
+    setCreating(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Fetch user profile name to denormalize
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+
+    const { error } = await supabase.from('events').insert({
+      title: newTitle.trim(),
+      description: newDesc.trim(),
+      category: newCategory,
+      start_time: newStartTime ? new Date(newStartTime).toISOString() : new Date().toISOString(),
+      end_time: newEndTime ? new Date(newEndTime).toISOString() : new Date(Date.now() + 7200000).toISOString(),
+      location: newLocation.trim(),
+      organizer_id: user.id,
+      organizer_name: profile?.display_name || 'Anonymous',
+      cover_image: newCoverImage.trim() || null,
+    });
+
+    if (!error) {
+      setNewTitle('');
+      setNewDesc('');
+      setNewCategory('academic');
+      setNewStartTime('');
+      setNewEndTime('');
+      setNewLocation('');
+      setNewCoverImage('');
+      setShowCreateModal(false);
+      fetchEvents();
+    } else {
+      console.error(error);
+    }
+    setCreating(false);
+  }
+
   function formatDate(dateStr: string) {
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-US', {
@@ -127,11 +182,134 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24 md:pb-6">
-      <h1 className="text-2xl font-bold text-on-background mb-2">Events</h1>
-      <p className="text-body-md text-on-surface-variant mb-6">
-        Discover what&apos;s happening on campus
-      </p>
+    <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24 md:pb-6 relative">
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <form
+            onSubmit={handleCreateEvent}
+            className="w-full max-w-lg bg-surface-container-lowest border border-outline-variant p-6 rounded-xl space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto"
+          >
+            <h3 className="text-lg font-bold text-on-surface">New Event</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-primary mb-1">Event Title</label>
+                <input
+                  type="text"
+                  required
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Graduation Party or Guest Lecture"
+                  className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-primary mb-1">Description</label>
+                <textarea
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="Details about the event..."
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm resize-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-primary mb-1">Category</label>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value as Event['category'])}
+                    className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                  >
+                    <option value="academic">Academic</option>
+                    <option value="social">Social</option>
+                    <option value="career">Career</option>
+                    <option value="workshop">Workshop</option>
+                    <option value="sports">Sports</option>
+                    <option value="cultural">Cultural</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-primary mb-1">Location</label>
+                  <input
+                    type="text"
+                    required
+                    value={newLocation}
+                    onChange={(e) => setNewLocation(e.target.value)}
+                    placeholder="Building B, Room 204"
+                    className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-primary mb-1">Start Time</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={newStartTime}
+                    onChange={(e) => setNewStartTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-primary mb-1">End Time</label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={newEndTime}
+                    onChange={(e) => setNewEndTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-primary mb-1">Cover Image URL</label>
+                <input
+                  type="text"
+                  value={newCoverImage}
+                  onChange={(e) => setNewCoverImage(e.target.value)}
+                  placeholder="https://example.com/cover.jpg"
+                  className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-low rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={creating || !newTitle.trim() || !newLocation.trim()}
+                className="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-medium hover:bg-primary/95 disabled:opacity-50"
+              >
+                Create Event
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Header Bar */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h1 className="text-2xl font-bold text-on-background">Events</h1>
+          <p className="text-body-md text-on-surface-variant mt-1">
+            Discover what&apos;s happening on campus
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-medium hover:bg-primary/90 active:scale-[0.97] transition-all flex items-center gap-1.5"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          New Event
+        </button>
+      </div>
 
       {/* Category Filter */}
       <div className="flex gap-2 overflow-x-auto hide-scrollbar mb-6 pb-1">
