@@ -19,9 +19,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uniconnect.model.Post
+import com.example.uniconnect.viewmodel.FeedViewModel
 
 @Composable
-fun FeedScreen(modifier: Modifier = Modifier) {
+fun FeedScreen(
+    modifier: Modifier = Modifier,
+    viewModel: FeedViewModel = viewModel()
+) {
+    val posts by viewModel.posts.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -29,28 +38,33 @@ fun FeedScreen(modifier: Modifier = Modifier) {
     ) {
         // Post composer
         item {
-            PostComposerCard()
+            PostComposerCard(onSubmit = { content -> viewModel.createPost(content) })
         }
 
-        // Announcement card
-        item {
-            AnnouncementCard()
+        if (error != null) {
+            item {
+                Text(text = error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
+            }
         }
 
-        // Research post
-        item {
-            ResearchPostCard()
+        if (isLoading && posts.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
         }
 
-        // Networking post
-        item {
-            NetworkingPostCard()
+        items(posts.size) { index ->
+            val post = posts[index]
+            GenericPostCard(post = post)
         }
     }
 }
 
 @Composable
-private fun PostComposerCard() {
+private fun PostComposerCard(onSubmit: (String) -> Unit) {
+    var content by remember { mutableStateOf("") }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -70,30 +84,36 @@ private fun PostComposerCard() {
                     Text("AM", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
                 Spacer(Modifier.width(12.dp))
-                Surface(
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
                     modifier = Modifier.weight(1f),
+                    placeholder = { Text("Start a post, share a resource...") },
                     shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                ) {
-                    Text(
-                        "Start a post, share a resource...",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     )
-                }
+                )
             }
             Spacer(Modifier.height(12.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainer)
             Spacer(Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                ComposerAction(icon = Icons.Filled.Image, label = "Media", tint = MaterialTheme.colorScheme.secondary)
-                ComposerAction(icon = Icons.AutoMirrored.Filled.Article, label = "Document", tint = MaterialTheme.colorScheme.tertiary)
-                ComposerAction(icon = Icons.Filled.Event, label = "Event", tint = MaterialTheme.colorScheme.primaryContainer)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ComposerAction(icon = Icons.Filled.Image, label = "Media", tint = MaterialTheme.colorScheme.secondary)
+                }
+                Button(onClick = { 
+                    if (content.isNotBlank()) {
+                        onSubmit(content)
+                        content = ""
+                    }
+                }) {
+                    Text("Post")
+                }
             }
         }
     }
@@ -170,6 +190,51 @@ private fun AnnouncementCard() {
                     Text("Action Required", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        FeedActionBar()
+    }
+}
+
+@Composable
+private fun GenericPostCard(post: Post) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        post.authorName?.take(2)?.uppercase() ?: "U", 
+                        style = MaterialTheme.typography.labelLarge, 
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(post.authorName ?: "Unknown User", style = MaterialTheme.typography.labelMedium)
+                    Text("Student", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.outline)
+                        Spacer(Modifier.width(4.dp))
+                        Text(post.createdAt.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                post.content,
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         FeedActionBar()

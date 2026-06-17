@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
@@ -13,6 +16,15 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperties.getProperty("SUPABASE_ANON_KEY") ?: ""}\"")
     }
 
     buildTypes {
@@ -28,7 +40,7 @@ android {
     buildFeatures {
       compose = true
       aidl = false
-      buildConfig = false
+      buildConfig = true
       shaders = false
     }
 
@@ -79,4 +91,15 @@ dependencies {
 
   // Material Icons Extended (for all icon families)
   implementation("androidx.compose.material:material-icons-extended")
+
+  // Supabase
+  implementation(libs.supabase.auth)
+  implementation(libs.supabase.postgrest)
+  implementation(libs.supabase.realtime)
+  implementation(libs.supabase.storage)
+
+  // Ktor Engine
+  implementation(libs.ktor.client.android)
+  implementation(libs.ktor.client.core)
 }
+

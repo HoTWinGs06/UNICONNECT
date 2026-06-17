@@ -28,6 +28,9 @@ import com.example.uniconnect.ui.help.HelpScreen
 import com.example.uniconnect.ui.messages.MessagesScreen
 import com.example.uniconnect.ui.onboarding.OnboardingScreen
 import com.example.uniconnect.ui.servers.ServersScreen
+import com.example.uniconnect.ui.auth.AuthScreen
+import com.example.uniconnect.viewmodel.AuthViewModel
+import com.example.uniconnect.repository.AuthState
 
 data class NavItem(
     val route: String,
@@ -39,10 +42,19 @@ data class NavItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainNavigation() {
-    var currentRoute by remember { mutableStateOf("onboarding") }
-    val showBottomNav = currentRoute !in listOf("onboarding")
-    val isFullScreen = currentRoute in listOf("servers", "messages")
+fun MainNavigation(authViewModel: AuthViewModel) {
+    val authState by authViewModel.authState.collectAsState()
+    var currentRoute by remember { mutableStateOf("auth") }
+    val showBottomNav = currentRoute !in listOf("onboarding", "auth")
+    val isFullScreen = currentRoute in listOf("servers", "messages", "auth")
+
+    LaunchedEffect(authState) {
+        if (authState == AuthState.Unauthenticated) {
+            currentRoute = "auth"
+        } else if (authState == AuthState.Authenticated && currentRoute == "auth") {
+            currentRoute = "feed"
+        }
+    }
 
     val navItems = remember {
         listOf(
@@ -163,6 +175,11 @@ fun MainNavigation() {
                 .then(if (!isFullScreen) Modifier.padding(innerPadding) else Modifier.padding(bottom = innerPadding.calculateBottomPadding())),
         ) { route ->
             when (route) {
+                "auth" -> AuthScreen(
+                    viewModel = authViewModel,
+                    onAuthSuccess = { currentRoute = "feed" },
+                    modifier = Modifier.fillMaxSize()
+                )
                 "onboarding" -> OnboardingScreen(
                     onContinue = { currentRoute = "feed" },
                     modifier = Modifier.fillMaxSize(),

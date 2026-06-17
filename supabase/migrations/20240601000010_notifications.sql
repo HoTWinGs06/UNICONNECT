@@ -202,6 +202,18 @@ create trigger on_help_status_notify
   after update on public.help_requests
   for each row execute function public.notify_on_help_status();
 
--- Enable realtime so the client receives new notifications live
-alter publication supabase_realtime add table public.notifications;
+-- Enable realtime so the client receives new notifications live.
+-- Idempotent guard so re-running the migration does not abort with 42710.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end $$;
+
 alter table public.notifications replica identity full;

@@ -34,6 +34,7 @@ dist/
 
 # --- Android ---
 android/.gradle/
+android/.kotlin/
 android/build/
 android/app/build/
 android/local.properties
@@ -57,3 +58,5 @@ build/
 *.txt
 !README.md
 !LICENSE
+new.sh
+SESSION_HANDOFF.md

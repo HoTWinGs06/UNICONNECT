@@ -25,6 +25,9 @@ export default function MessagesPage() {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const [isGroupMode, setIsGroupMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -100,6 +103,9 @@ export default function MessagesPage() {
 
   const handleOpenNewChatModal = async () => {
     setShowNewChatModal(true);
+    setIsGroupMode(false);
+    setSelectedIds([]);
+    setGroupName('');
     const { data } = await supabase
       .from('profiles')
       .select('*')
@@ -107,6 +113,41 @@ export default function MessagesPage() {
       .limit(50);
     if (data) setAllProfiles(data);
   };
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
+  async function createGroup() {
+    if (selectedIds.length < 2 || !groupName.trim()) return;
+
+    // Atomic create via SECURITY DEFINER RPC: inserting the conversation and then
+    // selecting it back fails RLS (no membership row exists yet), so the server
+    // creates the conversation + all members in one transaction and returns the id.
+    const { data: convId, error: convoError } = await supabase.rpc('create_conversation', {
+      p_is_group: true,
+      p_name: groupName.trim(),
+      p_member_ids: selectedIds,
+    });
+
+    if (convoError || !convId) {
+      console.error(convoError);
+      return;
+    }
+
+    await fetchConversations();
+
+    const { data: fullConvo } = await supabase
+      .from('conversations')
+      .select(`*, conversation_members(*, profile:profiles(*))`)
+      .eq('id', convId)
+      .single();
+
+    if (fullConvo) setSelectedConvo(fullConvo as ConversationWithDetails);
+    setShowNewChatModal(false);
+  }
 
   const findOrCreateConversation = async (otherUserId: string) => {
     const myConvos = conversations.filter(c => !c.is_group);
@@ -181,12 +222,41 @@ export default function MessagesPage() {
         <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-surface-container-lowest border border-outline-variant p-6 rounded-xl space-y-4 animate-scale-up flex flex-col max-h-[80vh]">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-on-surface">New Conversation</h3>
+              <h3 className="text-lg font-bold text-on-surface">
+                {isGroupMode ? 'New Group' : 'New Conversation'}
+              </h3>
               <button onClick={() => setShowNewChatModal(false)} className="text-on-surface-variant hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            
+
+            {/* Direct / Group toggle */}
+            <div className="flex gap-1 p-1 bg-surface-container rounded-lg">
+              {([['Direct', false], ['Group', true]] as const).map(([label, group]) => (
+                <button
+                  key={label}
+                  onClick={() => { setIsGroupMode(group); setSelectedIds([]); }}
+                  className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                    isGroupMode === group
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm'
+                      : 'text-on-surface-variant'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {isGroupMode && (
+              <input
+                type="text"
+                placeholder="Group name"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+              />
+            )}
+
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
               <input
@@ -201,25 +271,47 @@ export default function MessagesPage() {
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 thin-scrollbar">
               {allProfiles
                 .filter(p => p.display_name.toLowerCase().includes(chatSearchQuery.toLowerCase()))
-                .map((profile) => (
-                  <button
-                    key={profile.id}
-                    onClick={() => findOrCreateConversation(profile.id)}
-                    className="w-full text-left p-3 rounded-lg hover:bg-surface-container-low transition-colors flex items-center gap-3 border border-outline-variant/30"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container font-semibold text-xs shrink-0">
-                      {profile.display_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-xs text-on-surface truncate">{profile.display_name}</p>
-                      <p className="text-[10px] text-on-surface-variant truncate">{profile.branch || profile.role}</p>
-                    </div>
-                  </button>
-                ))}
+                .map((profile) => {
+                  const selected = selectedIds.includes(profile.id);
+                  return (
+                    <button
+                      key={profile.id}
+                      onClick={() => isGroupMode ? toggleSelected(profile.id) : findOrCreateConversation(profile.id)}
+                      className={`w-full text-left p-3 rounded-lg transition-colors flex items-center gap-3 border ${
+                        selected
+                          ? 'border-secondary bg-secondary-container/40'
+                          : 'border-outline-variant/30 hover:bg-surface-container-low'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container font-semibold text-xs shrink-0">
+                        {profile.display_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-xs text-on-surface truncate">{profile.display_name}</p>
+                        <p className="text-[10px] text-on-surface-variant truncate">{profile.branch || profile.role}</p>
+                      </div>
+                      {isGroupMode && (
+                        <span className={`material-symbols-outlined text-[20px] ${selected ? 'text-secondary' : 'text-outline-variant'}`}>
+                          {selected ? 'check_circle' : 'radio_button_unchecked'}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               {allProfiles.filter(p => p.display_name.toLowerCase().includes(chatSearchQuery.toLowerCase())).length === 0 && (
                 <p className="text-xs text-on-surface-variant italic p-2 text-center">No profiles found.</p>
               )}
             </div>
+
+            {isGroupMode && (
+              <button
+                onClick={createGroup}
+                disabled={selectedIds.length < 2 || !groupName.trim()}
+                className="w-full py-2.5 rounded-lg bg-secondary text-on-secondary text-sm font-semibold hover:bg-secondary/90 transition-colors disabled:opacity-40"
+              >
+                Create group{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -264,9 +356,13 @@ export default function MessagesPage() {
                 >
                   <div className="relative">
                     <div className="w-11 h-11 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container font-semibold text-sm">
-                      {other?.display_name?.charAt(0).toUpperCase() || '?'}
+                      {convo.is_group ? (
+                        <span className="material-symbols-outlined text-[22px]">group</span>
+                      ) : (
+                        other?.display_name?.charAt(0).toUpperCase() || '?'
+                      )}
                     </div>
-                    {other?.is_online && (
+                    {!convo.is_group && other?.is_online && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-success border-2 border-surface rounded-full" />
                     )}
                   </div>
@@ -277,7 +373,9 @@ export default function MessagesPage() {
                       </p>
                     </div>
                     <p className="text-label-sm text-on-surface-variant truncate">
-                      {other?.branch || 'UniConnect user'}
+                      {convo.is_group
+                        ? `${convo.conversation_members?.length ?? 0} members`
+                        : other?.branch || 'UniConnect user'}
                     </p>
                   </div>
                   {(myMembership?.unread_count ?? 0) > 0 && (
@@ -305,14 +403,20 @@ export default function MessagesPage() {
                 <span className="material-symbols-outlined">arrow_back</span>
               </button>
               <div className="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container font-semibold text-xs">
-                {getOtherUser(selectedConvo)?.display_name?.charAt(0).toUpperCase() || '?'}
+                {selectedConvo.is_group ? (
+                  <span className="material-symbols-outlined text-[20px]">group</span>
+                ) : (
+                  getOtherUser(selectedConvo)?.display_name?.charAt(0).toUpperCase() || '?'
+                )}
               </div>
               <div>
                 <p className="font-semibold text-sm text-on-surface">
                   {selectedConvo.name || getOtherUser(selectedConvo)?.display_name || 'Chat'}
                 </p>
                 <p className="text-[11px] text-on-surface-variant">
-                  {getOtherUser(selectedConvo)?.is_online ? 'Online' : 'Offline'}
+                  {selectedConvo.is_group
+                    ? `${selectedConvo.conversation_members?.length ?? 0} members`
+                    : getOtherUser(selectedConvo)?.is_online ? 'Online' : 'Offline'}
                 </p>
               </div>
             </div>

@@ -66,7 +66,7 @@ fun GradesScreen(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             KpiCard(
-                icon = Icons.AutoMirrored.Filled.MenuBook,
+                icon = Icons.Default.MenuBook,
                 iconTint = MaterialTheme.colorScheme.tertiary,
                 value = "5",
                 label = "Active Courses",
@@ -140,7 +140,7 @@ fun GradesScreen(modifier: Modifier = Modifier) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Upcoming Deadlines", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(16.dp))
-                DeadlineItem("BST Assignment", "Due Friday, 11:59 PM", Icons.AutoMirrored.Filled.Assignment, Color(0xFFEF4444))
+                DeadlineItem("BST Assignment", "Due Friday, 11:59 PM", Icons.Default.Assignment, Color(0xFFEF4444))
                 Spacer(Modifier.height(12.dp))
                 DeadlineItem("Physics Lab Quiz", "Due Monday, 9:00 AM", Icons.Default.Quiz, Color(0xFFF59E0B))
                 Spacer(Modifier.height(12.dp))

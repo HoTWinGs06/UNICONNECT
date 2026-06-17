@@ -16,22 +16,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uniconnect.model.Server
+import com.example.uniconnect.viewmodel.ServerViewModel
 
 @Composable
-fun ServersScreen(modifier: Modifier = Modifier) {
+fun ServersScreen(
+    modifier: Modifier = Modifier,
+    viewModel: ServerViewModel = viewModel()
+) {
     var selectedServer by remember { mutableStateOf("all") }
     var selectedChannel by remember { mutableStateOf("general") }
+    
+    val servers by viewModel.servers.collectAsState()
 
     Row(modifier = modifier.fillMaxSize()) {
         // Server rail
         ServerRail(
+            servers = servers,
             selectedServer = selectedServer,
             onSelectServer = { selectedServer = it },
         )
 
         // Channel list
+        val displayServerName = servers.find { it.id == selectedServer }?.name 
+            ?: if (selectedServer == "all") "All Campus Servers" else "Server"
+
         ChannelList(
-            serverName = serverDisplayName(selectedServer),
+            serverName = displayServerName,
             selectedChannel = selectedChannel,
             onSelectChannel = { selectedChannel = it },
             modifier = Modifier.width(220.dp),
@@ -47,6 +59,7 @@ fun ServersScreen(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ServerRail(
+    servers: List<Server>,
     selectedServer: String,
     onSelectServer: (String) -> Unit,
 ) {
@@ -71,12 +84,12 @@ private fun ServerRail(
             color = MaterialTheme.colorScheme.outlineVariant,
         )
 
-        // Year servers
-        listOf("Y1", "Y2", "Y3", "Y4").forEach { year ->
+        // Dynamic Servers from Supabase
+        servers.forEach { server ->
             ServerPill(
-                label = year,
-                selected = selectedServer == year.lowercase(),
-                onClick = { onSelectServer(year.lowercase()) },
+                label = server.name.take(2).uppercase(),
+                selected = selectedServer == server.id,
+                onClick = { onSelectServer(server.id) },
                 isText = true,
             )
         }
@@ -246,8 +259,8 @@ private fun ChannelItem(
     val icon = when (iconName) {
         "campaign" -> Icons.Default.Campaign
         "folder_open" -> Icons.Default.FolderOpen
-        "help_outline" -> Icons.AutoMirrored.Filled.HelpOutline
-        "volume_up" -> Icons.AutoMirrored.Filled.VolumeUp
+        "help_outline" -> Icons.Default.HelpOutline
+        "volume_up" -> Icons.Default.VolumeUp
         "videocam" -> Icons.Default.Videocam
         else -> Icons.Default.Tag
     }
@@ -396,7 +409,7 @@ private fun ChatArea(channelName: String, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(36.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.secondary),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Send, contentDescription = "Send", modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -454,13 +467,4 @@ private fun ChatMessage(
     }
 }
 
-private fun serverDisplayName(id: String): String = when (id) {
-    "all" -> "All Campus Servers"
-    "y1" -> "Year 1 Server"
-    "y2" -> "Year 2 Server"
-    "y3" -> "Year 3 Server"
-    "y4" -> "Year 4 Server"
-    "faculty" -> "Faculty Lounge"
-    "clubs" -> "Clubs & Societies"
-    else -> "Server"
-}
+
