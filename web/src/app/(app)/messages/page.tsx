@@ -161,31 +161,30 @@ export default function MessagesPage() {
       return;
     }
 
-    const { data: convo, error: convoError } = await supabase
-      .from('conversations')
-      .insert({ is_group: false })
-      .select()
-      .single();
+    // H1 fix: DM creation now goes through the SECURITY DEFINER
+    // create_conversation RPC (atomic, server-side membership insert).
+    // Direct client inserts into conversation_members are no longer permitted
+    // by RLS, since they previously allowed joining arbitrary conversations.
+    const { data: convoId, error: convoError } = await supabase.rpc('create_conversation', {
+      p_is_group: false,
+      p_name: null,
+      p_member_ids: [otherUserId],
+    });
 
-    if (convoError || !convo) {
+    if (convoError || !convoId) {
       console.error(convoError);
       return;
     }
 
-    await supabase.from('conversation_members').insert([
-      { conversation_id: convo.id, user_id: currentUserId },
-      { conversation_id: convo.id, user_id: otherUserId }
-    ]);
-
     await fetchConversations();
-    
+
     const { data: fullConvo } = await supabase
       .from('conversations')
       .select(`
         *,
         conversation_members(*, profile:profiles(*))
       `)
-      .eq('id', convo.id)
+      .eq('id', convoId)
       .single();
 
     if (fullConvo) {
